@@ -17,7 +17,7 @@ export default function ProfilePage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { webApp, user: telegramUser } = useTelegram();
+  const { webApp, user: telegramUser, initData } = useTelegram();
   const { setupBackButton, hideMainButton } = useTelegramButtons();
 
   // --- ИМПОРТИРУЕМ ХУКИ ДЛЯ НАВИГАЦИИ ---
@@ -35,10 +35,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchCustomerInfo = async () => {
+      // Проверяем, что initData не null, перед запросом
+      if (!initData) return;
+      
       try {
-        const data = await getMyInfo();
+        setIsLoading(true);
+        // 2. Передаем initData в API-функцию
+        const data = await getMyInfo(initData);
         setCustomer(data);
-      } catch (e: any) {
+      }catch (e: any) {
         setError(e.message || "Не удалось загрузить данные профиля");
       } finally {
         setIsLoading(false);

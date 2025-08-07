@@ -11,7 +11,7 @@ import { NavigationProvider } from '@/context/NavigationContext';
 
 export const metadata: Metadata = {
   title: 'Kosynka Store',
-  description: 'Магазин женских аксессуаров',
+  description: 'Магазин стильных и качественных аксессуаров для волос, где каждая деталь — это сочетание эстетики, удобства и долговечности. Создавайте уникальные образы с аксессуарами, которые вдохновляют и подчеркивают вашу индивидуальность.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
@@ -29,8 +29,8 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <body> ПОЛНОСТЬЮ ЧИСТЫЙ. 
         Стили на него применяются из globals.css.
       */}
-      <body>
-        <TelegramProvider>
+      <body className="bg-white  text-light-text transition-colors duration-300">
+      <TelegramProvider>
           <CartProvider>
             <NotifierProvider>
             <NavigationProvider>

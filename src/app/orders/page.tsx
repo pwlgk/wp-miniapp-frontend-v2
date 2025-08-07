@@ -14,6 +14,7 @@ import OrderListItem from '@/components/orders/OrderListItem';
 import { ShoppingBag } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useTelegramButtons } from '@/hooks/useTelegramButtons';
+import { useTelegram } from '@/hooks/useTelegram'; // Убедитесь, что это ваш хук
 
 export default function OrdersHistoryPage() {
   const [orders, setOrders] = useState<OrderWooCommerce[]>([]);
@@ -24,6 +25,7 @@ export default function OrdersHistoryPage() {
   const { push } = useNavigation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { initData } = useTelegram(); // 1. Получаем initData
 
   useEffect(() => {
     setupBackButton(true);
@@ -33,7 +35,7 @@ export default function OrdersHistoryPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await getMyOrders();
+        const data = await getMyOrders(initData);
         setOrders(data.sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime()));
       } catch (e: any) {
         setError(e.message || "Не удалось загрузить историю заказов");
@@ -53,7 +55,17 @@ export default function OrdersHistoryPage() {
   if (error) return <ErrorMessage message={error} />;
 
   if (orders.length === 0) {
-    // ... (без изменений) ...
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <ShoppingBag size={64} className="text-gray-300 mb-4" />
+        <h1 className="text-2xl font-bold">У вас еще нет заказов</h1>
+        <p className="text-gray-500 mt-2">Все ваши будущие покупки появятся здесь.</p>
+        <div className="mt-6 w-full max-w-xs">
+          {/* --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Link заменен на Button с onClick --- */}
+          <Button onClick={handleGoShopping}>К покупкам</Button>
+        </div>
+      </div>
+    )
   }
 
   return (

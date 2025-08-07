@@ -37,7 +37,7 @@ function CheckoutPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { state: cartState, dispatch: cartDispatch } = useCart();
-  const { webApp } = useTelegram();
+  const { webApp, initData } = useTelegram(); // 1. Получаем initData
 
   // --- ИЗМЕНЕНИЕ 1: Объединяем состояния ---
   const [state, setState] = useState({
@@ -62,7 +62,7 @@ function CheckoutPageContent() {
   useEffect(() => {
     const fetchCustomerInfo = async () => {
       try {
-        const data = await getMyInfo();
+        const data = await getMyInfo(initData); // 2. Передаем в getMyInfo
         setState(prev => ({
           ...prev,
           formData: {
@@ -139,7 +139,7 @@ function CheckoutPageContent() {
       if (currentCoupon) {
         payload.coupon_code = currentCoupon;
       }
-      const createdOrder = await createOrder(payload);
+      const createdOrder = await createOrder(payload, initData);
 
       webApp?.HapticFeedback.notificationOccurred('success');
       cartDispatch({ type: 'CLEAR_CART' });

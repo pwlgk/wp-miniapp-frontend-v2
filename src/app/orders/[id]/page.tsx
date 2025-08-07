@@ -11,13 +11,15 @@ import { useTelegramButtons } from '@/hooks/useTelegramButtons';
 import { useNavigation } from '@/context/NavigationContext';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { getStatusInfo } from '@/utils/statusUtils'; // Импортируем нашу утилиту
+import { useTelegram } from '@/hooks/useTelegram'; // Убедитесь, что это ваш хук
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const [order, setOrder] = useState<OrderWooCommerce | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { setupBackButton, hideMainButton } = useTelegramButtons();
-  
+  const { initData } = useTelegram(); // 1. Получаем initData
+
   const { push } = useNavigation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -28,10 +30,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }, [setupBackButton, hideMainButton]);
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!params.id || !initData) return; // Добавляем проверку на initData
     const fetchOrder = async () => {
       try {
-        const data = await getMyOrderById(params.id);
+        const data = await getMyOrderById(params.id, initData);
         setOrder(data);
       } catch (e: any) {
         setError(e.message || "Не удалось загрузить данные заказа");

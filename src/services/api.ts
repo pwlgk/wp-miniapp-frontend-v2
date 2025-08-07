@@ -1,7 +1,7 @@
 // services/api.ts
 import { Category, Product, Tag, Customer, CustomerUpdatePayload, LineItemCreate, OrderWooCommerce, OrderPayload, CouponValidationResponse } from '@/types';
 
-const BASE_URL = 'http://localhost:8000'; 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'; 
 
 interface ApiProductsResponse {
   count: number;
@@ -57,8 +57,8 @@ export const getProducts = async (params: {
   };
 };
 
-export const getProductById = async (id: number | string): Promise<Product> => {
-  const apiClient = getApiClient();
+export const getProductById = async (id: number | string, initData: string ): Promise<Product> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.get(`/api/v1/products/${id}`);
   if (!response.ok) throw new Error('Product not found');
   return response.json();
@@ -95,15 +95,14 @@ export const hasSubcategories = async (parentId: number): Promise<boolean> => {
 
 
 // Создадим единый клиент, чтобы не дублировать логику с initData
-const getApiClient = () => {
-  // Явное приведение типа для window
-  const tgWindow = window as any;
-  const initData = typeof window !== 'undefined' ? tgWindow.Telegram?.WebApp?.initData : undefined;
-  
+const getApiClient = (initData: string | null) => {
   const headers = new Headers();
   headers.append('Content-Type', 'application/json');
   if (initData) {
     headers.append('X-Telegram-Init-Data', initData);
+  } else {
+    // Можно добавить лог, чтобы отследить, если initData не передается
+    console.warn("API call is being made without Telegram InitData.");
   }
 
   return {
@@ -116,18 +115,15 @@ const getApiClient = () => {
 /**
  * Получить данные текущего пользователя
  */
-export const getMyInfo = async (): Promise<Customer> => {
-  const apiClient = getApiClient();
+export const getMyInfo = async (initData: string | null): Promise<Customer> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.get('/api/v1/customers/me');
   if (!response.ok) throw new Error('Failed to fetch user info');
   return response.json();
 };
 
-/**
- * Обновить данные текущего пользователя
- */
-export const updateMyInfo = async (data: CustomerUpdatePayload): Promise<Customer> => {
-  const apiClient = getApiClient();
+export const updateMyInfo = async (data: CustomerUpdatePayload, initData: string | null): Promise<Customer> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.put('/api/v1/customers/me', data);
   if (!response.ok) throw new Error('Failed to update user info');
   return response.json();
@@ -151,52 +147,43 @@ export interface ServerCartResponse {
 /**
  * Получить и синхронизировать корзину пользователя
  */
-export const getMyCart = async (): Promise<ServerCartResponse> => {
-  const apiClient = getApiClient();
+export interface ServerCartResponse {
+  items: CartItem[];
+  messages: string[];
+}
+
+export const getMyCart = async (initData: string | null): Promise<ServerCartResponse> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.get('/api/v1/cart/');
   if (!response.ok) return { items: [], messages: ['Не удалось загрузить корзину'] };
   return response.json();
 };
 
-/**
- * Сохранить/обновить корзину пользователя
- */
-export const updateMyCart = async (items: LineItemCreate[]): Promise<any> => {
-  const apiClient = getApiClient();
-  // Для POST/PUT запросов getApiClient должен быть немного умнее
+export const updateMyCart = async (items: LineItemCreate[], initData: string | null): Promise<any> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.post('/api/v1/cart/', items);
   if (!response.ok) throw new Error('Failed to update cart');
   return response.json();
 };
 
-export const getMyOrders = async (): Promise<OrderWooCommerce[]> => {
-  const apiClient = getApiClient();
+export const getMyOrders = async (initData: string | null): Promise<OrderWooCommerce[]> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.get('/api/v1/orders/my');
   if (!response.ok) throw new Error('Failed to fetch orders');
   return response.json();
-}
+};
 
-
-export const validateCoupon = async (code: string): Promise<CouponValidationResponse> => {
-  const apiClient = getApiClient();
-  const response = await apiClient.post('/api/v1/coupons/validate', { code });
-  // Валидация купона может вернуть и 404, и 400, обработаем это как невалидный купон
+export const getMyOrderById = async (orderId: number | string, initData: string | null): Promise<OrderWooCommerce> => {
+  const apiClient = getApiClient(initData);
+  const response = await apiClient.get(`/api/v1/orders/${orderId}`);
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    return {
-      valid: false,
-      code,
-      message: errorData.detail || "Промокод не найден или недействителен."
-    }
+    throw new Error('Заказ не найден или у вас нет прав на его просмотр.');
   }
   return response.json();
 };
 
-/**
- * Создать новый заказ
- */
-export const createOrder = async (payload: OrderPayload): Promise<OrderWooCommerce> => {
-  const apiClient = getApiClient();
+export const createOrder = async (payload: OrderPayload, initData: string | null): Promise<OrderWooCommerce> => {
+  const apiClient = getApiClient(initData);
   const response = await apiClient.post('/api/v1/orders/', payload);
   if (response.status !== 201) {
     const errorData = await response.json();
@@ -204,12 +191,24 @@ export const createOrder = async (payload: OrderPayload): Promise<OrderWooCommer
   }
   return response.json();
 };
-export const getMyOrderById = async (orderId: number | string): Promise<OrderWooCommerce> => {
-  const apiClient = getApiClient();
-  // --- ИЗМЕНЕНИЕ: Используем новый эндпоинт ---
-  const response = await apiClient.get(`/api/v1/orders/${orderId}`);
+
+// --- Эндпоинты, которые могут быть и публичными, и приватными ---
+// Валидация купона не требует данных пользователя, поэтому initData не нужен.
+export const validateCoupon = async (code: string): Promise<CouponValidationResponse> => {
+  // Используем обычный fetch, так как initData не требуется
+  const response = await fetch(`${BASE_URL}/api/v1/coupons/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  });
+  
   if (!response.ok) {
-    throw new Error('Заказ не найден или у вас нет прав на его просмотр.');
+    const errorData = await response.json().catch(() => ({}));
+    return {
+      valid: false,
+      code,
+      message: errorData.detail || "Промокод не найден или недействителен."
+    }
   }
   return response.json();
 };

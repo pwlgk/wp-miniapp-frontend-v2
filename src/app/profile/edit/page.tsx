@@ -12,6 +12,7 @@ import { useTelegramButtons } from '@/hooks/useTelegramButtons';
 import { useNotifier } from '@/hooks/useNotifier';
 import InputField from '@/components/ui/InputField'; 
 import { useNavigation } from '@/context/NavigationContext';
+import { useTelegram } from '@/hooks/useTelegram'; // Убедитесь, что это ваш хук
 
 export default function EditProfilePage() {
   const { push } = useNavigation();
@@ -25,6 +26,7 @@ export default function EditProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setupBackButton, hideMainButton } = useTelegramButtons();
+  const { initData } = useTelegram(); // 1. Получаем initData
 
   useEffect(() => {
     setupBackButton(true);
@@ -33,8 +35,9 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     const fetchCustomerInfo = async () => {
+      if (!initData) return;
       try {
-        const data = await getMyInfo();
+        const data = await getMyInfo(initData); 
         setFormData({
           first_name: data.first_name || '',
           phone: data.billing.phone || '',
@@ -100,7 +103,7 @@ export default function EditProfilePage() {
         first_name: formData.first_name,
         billing: { phone: formData.phone, city: formData.city }
       };
-      await updateMyInfo(payload);
+      await updateMyInfo(payload, initData); 
       
       notify('Ваши данные успешно сохранены!', 'success');
       
