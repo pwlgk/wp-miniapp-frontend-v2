@@ -1,7 +1,20 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Добавляем эту секцию
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'kosynkastore.ru',
+        port: '',
+        pathname: '/wp-content/uploads/**', // Уточняем путь для большей безопасности
+      },
+      {
+        protocol: 'https',
+        hostname: 't.me',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
