@@ -9,20 +9,22 @@ import ErrorMessage from '@/components/ui/ErrorMessage';
 import Image from 'next/image';
 import { useTelegramButtons } from '@/hooks/useTelegramButtons';
 import { useNavigation } from '@/context/NavigationContext';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { getStatusInfo } from '@/utils/statusUtils'; // Импортируем нашу утилиту
-import { useTelegram } from '@/hooks/useTelegram'; // Убедитесь, что это ваш хук
+import { getStatusInfo } from '@/utils/statusUtils';
+import { useTelegram } from '@/hooks/useTelegram';
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+// --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Типизируем `props` как `any` ---
+export default function OrderDetailPage(props: any) {
+  
+  // --- А ТЕПЕРЬ ИЗВЛЕКАЕМ `params` С НУЖНЫМ НАМ ТИПОМ ---
+  const params: { id: string } = props.params;
+
   const [order, setOrder] = useState<OrderWooCommerce | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { setupBackButton, hideMainButton } = useTelegramButtons();
-  const { initData } = useTelegram(); // 1. Получаем initData
-
+  
   const { push } = useNavigation();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { initData } = useTelegram();
 
   useEffect(() => {
     setupBackButton(true);
@@ -30,22 +32,27 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }, [setupBackButton, hideMainButton]);
 
   useEffect(() => {
-    if (!params.id || !initData) return; // Добавляем проверку на initData
+    // Используем `params.id` напрямую
+    if (!params.id || !initData) return;
+    
     const fetchOrder = async () => {
       try {
         const data = await getMyOrderById(params.id, initData);
         setOrder(data);
-      } catch (e: any) {
-        setError(e.message || "Не удалось загрузить данные заказа");
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+            setError(e.message || "Не удалось загрузить данные заказа");
+        } else {
+            setError("Неизвестная ошибка");
+        }
       } finally {
         setIsLoading(false);
       }
     };
     fetchOrder();
-  }, [params.id]);
+  }, [params.id, initData]);
 
   const handleProductClick = (productId: number) => {
-    const currentPath = `${pathname}?${searchParams.toString()}`;
     const newPath = `/products/${productId}`;
     push(newPath);
   };

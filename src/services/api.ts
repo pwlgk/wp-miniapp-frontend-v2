@@ -57,9 +57,30 @@ export const getProducts = async (params: {
   };
 };
 
-export const getProductById = async (id: number | string, initData: string ): Promise<Product> => {
+
+// --- НОВАЯ ФУНКЦИЯ ---
+/**
+ * Регистрирует пользователя на бэкенде после получения
+ * разрешения на отправку сообщений.
+ * @param initData Актуальная строка initData
+ * @returns {Promise<any>} Ответ от сервера (например, { status: "ok" })
+ */
+export const registerUser = async (initData: string | null): Promise<any> => {
+  if (!initData) {
+    throw new Error("Cannot register user without InitData.");
+  }
   const apiClient = getApiClient(initData);
-  const response = await apiClient.get(`/api/v1/products/${id}`);
+  // Убедитесь, что эндпоинт на бэкенде `/api/v1/users/register`
+  const response = await apiClient.post('/api/v1/users/register', {}); // Тело может быть пустым
+  if (!response.ok) {
+    throw new Error('Failed to register user on the backend.');
+  }
+  return response.json();
+};
+
+export const getProductById = async (id: number | string): Promise<Product> => {
+  // Убираем getApiClient и initData. Используем обычный fetch.
+  const response = await fetch(`${BASE_URL}/api/v1/products/${id}`);
   if (!response.ok) throw new Error('Product not found');
   return response.json();
 };

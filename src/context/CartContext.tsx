@@ -100,7 +100,7 @@ const cartReducer = (state: CartState, action: Action): CartState => {
 
 // --- 4. Компонент-провайдер ---
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-    const { isReady: isTelegramReady } = useTelegram();
+  const { initData, isReady: isTelegramReady } = useTelegram();
   
     const [state, dispatch] = useReducer(cartReducer, {
       items: [],
@@ -120,7 +120,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
       const initializeCart = async () => {
         try {
-          const serverCart = await getMyCart();
+          const serverCart = await getMyCart(initData);
           dispatch({ type: 'SET_CART', payload: serverCart });
         } catch (e) {
           console.error("Failed to initialize cart:", e);
@@ -151,7 +151,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         try {
           // Мы передаем именно debouncedItems, т.к. state.items могут быть более свежими,
           // а мы хотим сохранить только "устаканившееся" состояние.
-          await updateMyCart(debouncedItems);
+          await updateMyCart(debouncedItems, initData);
         } catch (e) {
           console.error("Cart sync failed:", e);
         } finally {

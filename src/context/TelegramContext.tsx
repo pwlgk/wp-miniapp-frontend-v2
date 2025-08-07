@@ -2,10 +2,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import { registerUser } from '@/services/api'; // Импортируем нашу новую функцию
 
-// Убедитесь, что у вас есть файл telegram.d.ts с глобальными типами
-// declare global { interface Window { Telegram?: { WebApp: TelegramWebApp } } }
-// interface TelegramWebApp { user?: WebAppUser, initData?: string, ... }
+
 
 interface TelegramContextType {
   webApp: TelegramWebApp | null;
@@ -38,6 +37,37 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
       setInitData(app.initData);
       setIsReady(true);
 
+      // --- НОВАЯ ЛОГИКА: Запрос на разрешение ---
+      const checkAndRequestWriteAccess = async () => {
+        // Проверяем в localStorage, чтобы не спрашивать каждый раз
+        const hasRequested = localStorage.getItem('write_access_requested');
+        if (hasRequested) {
+          return; // Уже спрашивали, выходим
+        }
+
+        // --- ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА ---
+        // Ждем небольшую паузу, чтобы пользователь успел увидеть интерфейс,
+        // прежде чем показывать ему системный попап.
+        await new Promise(resolve => setTimeout(resolve, 3000)); // 3 секунды
+
+        // Показываем нативный попап Telegram
+        app.requestWriteAccess?.((accessGranted: boolean) => {
+          // Запоминаем, что мы уже спрашивали
+          localStorage.setItem('write_access_requested', 'true');
+
+          if (accessGranted) {
+            console.log('[Telegram] Пользователь разрешил отправку сообщений.');
+            // Если разрешил, отправляем фоновый запрос на регистрацию
+            registerUser(app.initData)
+              .then(() => console.log('[API] Пользователь успешно зарегистрирован для уведомлений.'))
+              .catch(err => console.error('[API] Ошибка регистрации пользователя:', err));
+          } else {
+            console.log('[Telegram] Пользователь отклонил запрос на отправку сообщений.');
+          }
+        });
+      };
+      
+      checkAndRequestWriteAccess();
       const handleDataChange = () => {
         console.log('[Telegram] initData была обновлена Telegram.');
         setInitData(app.initData);

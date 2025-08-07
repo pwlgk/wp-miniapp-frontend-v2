@@ -25,6 +25,7 @@ export type Product = {
   sale_price: string;
   on_sale: boolean;
   price_html?: string; // Знак '?' делает поле необязательным
+  sku: string;
 
   images: {
     id: number;
