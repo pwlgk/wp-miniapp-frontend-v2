@@ -9,6 +9,11 @@ interface ApiProductsResponse {
   previous: string | null;
   results: Product[];
 }
+
+export interface InfiniteProductsResponse {
+  products: Product[];
+  nextPage: number | undefined; // Номер следующей страницы или undefined, если ее нет
+}
 export interface PaginatedProductsResponse {
   products: Product[];
   totalPages: number;
@@ -21,7 +26,6 @@ export const getTags = async (): Promise<Tag[]> => {
   }
   return response.json();
 };
-// ОБНОВЛЕНО: getProducts теперь возвращает объект с товарами и totalPages
 export const getProducts = async (params: { 
   page?: number;
   per_page?: number;
@@ -32,11 +36,8 @@ export const getProducts = async (params: {
   on_sale?: boolean;
   featured?: boolean;
   tags?: string;
-  include?: string; // <-- ДОБАВЛЯЕМ ЭТО ПОЛЕ
-
-} = {}): Promise<PaginatedProductsResponse> => {
-  // `per_page` теперь называется `page_size` в DRF, но ваш бэкенд может это переименовывать.
-  // Оставим `per_page`, т.к. бэкенд-прослойка должна это обрабатывать.
+  include?: string;
+} = {}): Promise<InfiniteProductsResponse> => {
   const query = new URLSearchParams(params as any).toString();
   const response = await fetch(`${BASE_URL}/api/v1/products/?${query}`);
 
@@ -47,13 +48,25 @@ export const getProducts = async (params: {
   // Получаем весь JSON-ответ
   const data: ApiProductsResponse = await response.json();
 
-  // Вычисляем общее количество страниц
-  const itemsPerPage = params.per_page || 20; // Используем то же значение, что и в запросе
-  const totalPages = Math.ceil(data.count / itemsPerPage);
+  // Вычисляем номер следующей страницы из поля `next`
+  let nextPage: number | undefined = undefined;
+  if (data.next) {
+    try {
+      const nextUrl = new URL(data.next);
+      const nextPageParam = nextUrl.searchParams.get('page');
+      if (nextPageParam) {
+        nextPage = parseInt(nextPageParam, 10);
+      }
+    } catch (e) {
+      console.error("Could not parse next page URL:", data.next, e);
+      // Если URL некорректный, считаем, что следующей страницы нет
+      nextPage = undefined;
+    }
+  }
 
   return { 
     products: data.results, 
-    totalPages: totalPages > 0 ? totalPages : 1 // Убедимся, что возвращается хотя бы 1
+    nextPage: nextPage 
   };
 };
 

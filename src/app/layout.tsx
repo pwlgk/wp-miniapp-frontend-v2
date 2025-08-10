@@ -8,6 +8,7 @@ import { CartProvider } from '@/context/CartContext';
 import { TelegramProvider } from '@/context/TelegramContext';
 import { NotifierProvider } from '@/context/NotifierContext';
 import { NavigationProvider } from '@/context/NavigationContext';
+import QueryProvider from '@/components/providers/QueryProvider';
 
 export const metadata: Metadata = {
   title: 'Kosynka Store',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
       */}
       <body className="bg-white  text-light-text transition-colors duration-300">
       <TelegramProvider>
+      <QueryProvider> 
           <CartProvider>
             <NotifierProvider>
             <NavigationProvider>
@@ -39,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                 </NavigationProvider>
             </NotifierProvider>
           </CartProvider>
+          </QueryProvider>
         </TelegramProvider>
       </body>
     </html>
