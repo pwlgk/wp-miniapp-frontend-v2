@@ -193,6 +193,10 @@ function CheckoutPageContent() {
           {/* --- ИЗМЕНЕНИЕ 4: Вызываем функцию для получения значения --- */}
           <span>{totalAmount() ? `${totalAmount()} ₽` : '...'}</span>
         </div>
+        <div className="p-4 bg-gray-100 rounded-lg text-lg flex justify-between font-bold">
+          {/* --- ИЗМЕНЕНИЕ 4: Вызываем функцию для получения значения --- */}
+          <span>После заказа с вами свяжется менеджер для согласования доставки и оплаты.</span>
+        </div>
         
         {state.globalError && <ErrorMessage message={state.globalError} />}
         
