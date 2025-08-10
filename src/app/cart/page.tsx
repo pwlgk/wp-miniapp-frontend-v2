@@ -13,8 +13,9 @@ import { useNavigation } from '@/context/NavigationContext';
 import CartItemCard from '@/components/cart/CartItemCard';
 import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
-import { ShoppingCart, TicketPercent, AlertCircle } from 'lucide-react';
+import { ShoppingCart, TicketPercent, AlertCircle, ChevronDown } from 'lucide-react';
 import { useTelegramButtons } from '@/hooks/useTelegramButtons';
+import { motion, AnimatePresence } from 'framer-motion'; // Импортируем для анимации
 
 const MIN_ORDER_AMOUNT = 500;
 
@@ -28,7 +29,8 @@ export default function CartPage() {
   const [productDetails, setProductDetails] = useState<Product[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
   const [stockMessages, setStockMessages] = useState<string[]>([]);
-  
+  const [isCouponPanelOpen, setIsCouponPanelOpen] = useState(false);
+
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<CouponValidationResponse | null>(null);
   const [isCouponLoading, setIsCouponLoading] = useState(false);
@@ -197,30 +199,57 @@ export default function CartPage() {
         </div>
       )}
       
-      <div className="space-y-2 pt-4">
-        <label className="font-semibold text-main-text">Промокод</label>
-        <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto] gap-2">
-          <input 
-            type="text"
-            value={couponInput}
-            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-            placeholder="PROMO2024"
-            className="min-w-0 h-12 px-4 rounded-lg bg-gray-100 border-gray-300 focus:border-accent focus:ring-0"
-            disabled={isCouponLoading}
-          />
-          <Button 
-            onClick={handleApplyCoupon} 
-            disabled={isCouponLoading || !couponInput} 
-          >
-            {isCouponLoading ? <Spinner /> : 'Применить'}
-          </Button>
-        </div>
-        {appliedCoupon?.valid && (
-          <div className="mt-2 p-2 bg-green-100 text-green-800 rounded-lg flex items-center gap-2">
-            <TicketPercent size={18}/>
-            <span>Применен промокод: <strong>{appliedCoupon.code}</strong></span>
-          </div>
+      <div className="pt-4 border-t border-gray-200">
+        {appliedCoupon ? (
+            // Если купон уже применен, показываем его
+            <div className="p-3 bg-green-100 text-green-800 rounded-lg flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <TicketPercent size={20}/>
+                    <span className="font-semibold">Применен: <strong>{appliedCoupon.code}</strong></span>
+                </div>
+                <button onClick={() => setAppliedCoupon(null)} className="font-bold text-xs">Удалить</button>
+            </div>
+        ) : (
+            // Если купона нет, показываем триггер
+            <button 
+              onClick={() => setIsCouponPanelOpen(!isCouponPanelOpen)}
+              className="flex justify-between items-center w-full text-left p-3 rounded-lg hover:bg-gray-100 d"
+            >
+              <span className="font-semibold text-light-text dark:text-dark-text">Есть промокод?</span>
+              <motion.div animate={{ rotate: isCouponPanelOpen ? 180 : 0 }}>
+                <ChevronDown />
+              </motion.div>
+            </button>
         )}
+
+        <AnimatePresence>
+          {isCouponPanelOpen && !appliedCoupon && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginTop: '0.75rem' }} // 12px
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto] gap-2">
+                <input 
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder="Введите промокод..."
+                  className="min-w-0 h-12 px-4 rounded-lg bg-gray-100 border-gray-300 focus:border-light-accent focus:ring-0"
+                  disabled={isCouponLoading}
+                />
+                <Button 
+                  onClick={handleApplyCoupon}  variant='secondary'
+                  disabled={isCouponLoading || !couponInput} 
+                >
+                  {isCouponLoading ? <Spinner /> : 'Применить'}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="pt-4 space-y-2 border-t border-gray-200">

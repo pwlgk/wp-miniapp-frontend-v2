@@ -67,15 +67,13 @@ const CartItemCard = memo(function CartItemCard({ item, productDetails }: CartIt
         </button>
         <p className="text-lg font-semibold mt-1">{productDetails.price} ₽</p>
         {productDetails.stock_quantity !== null && item.quantity >= productDetails.stock_quantity && (
-          <p className="text-xs text-red-500 font-semibold mt-1">Достигнут максимум</p>
+          <p className="text-xs text-red-500 font-semibold mt-1">Вы выбрали всё, что есть</p>
         )}
       </div>
 
       {/* Правая часть с управлением */}
       <div className="flex flex-col items-end justify-between h-full">
-        {/* <button onClick={handleRemove} className="text-gray-400 hover:text-red-500 transition-colors">
-          <Trash2 size={18} />
-        </button> */}
+        
         <div className="flex items-center gap-2 mt-2">
           <button onClick={() => handleQuantityChange(item.quantity - 1)} disabled={item.quantity <= 1} className="p-2 rounded-full bg-gray-200 disabled:opacity-50">
             <Minus size={16}/>
@@ -88,7 +86,10 @@ const CartItemCard = memo(function CartItemCard({ item, productDetails }: CartIt
           >
             <Plus size={16}/>
           </button>
-        </div>
+        </div><br /><br />
+        <button onClick={handleRemove} className="text-gray-400 hover:text-red-500 transition-colors">
+          <Trash2 size={18} />
+        </button>
       </div>
     </div>
   );

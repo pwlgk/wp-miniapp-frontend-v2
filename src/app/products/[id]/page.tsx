@@ -65,13 +65,13 @@ export default function ProductDetailPage(props: any) {
         <div className="flex justify-between items-center">
           <CategoryBadges categories={product.categories} />
           {/* --- ИЗМЕНЕНИЕ 2: Отображаем артикул, если он есть --- */}
-          {product.sku && (
+          
+        </div>
+        {product.sku && (
             <span className="text-xs text-gray-400 font-mono">
               АРТ: {product.sku}
             </span>
           )}
-        </div>
-        
         <h1 className="text-3xl font-bold text-main-text">{product.name}</h1>
         
         <p className="text-4xl font-extrabold text-main-text">
